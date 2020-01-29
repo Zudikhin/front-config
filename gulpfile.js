@@ -1,57 +1,63 @@
 const gulp = require("gulp");
-const concat = require("gulp-concat");
 const autoprefixer = require("gulp-autoprefixer");
-const cleanCSS = require("gulp-clean-css");
 const uglify = require("gulp-uglify");
-const del = require("del");
+const sass = require("gulp-sass");
+const rename = require('gulp-rename');
 const browserSync = require("browser-sync").create();
 
-const cssFiles = ["./src/css/main.css", "./src/css/media.css"];
-
-function styles() {
+gulp.task('autoprefixer', function () {
   return gulp
-    .src(cssFiles)
-    .pipe(concat("style.css"))
+    .src("app/css/*.css")
+    .pipe(autoprefixer({
+      cascade: false
+    }))
+    .pipe(gulp.dest("app/css/"));
+})
+
+gulp.task("scss", function () {
+  return gulp
+    .src("app/scss/style.scss")
     .pipe(
-      autoprefixer({
-        cascade: false
+      sass({
+        outputStyle: "compressed"
       })
     )
-    .pipe(
-      cleanCSS({
-        level: 2
-      })
-    )
-    .pipe(gulp.dest("./build/css"))
+    .pipe(autoprefixer())
+    .pipe(rename({
+      suffix: '.min'
+    }))
+    .pipe(gulp.dest("app/css/"))
     .pipe(browserSync.stream());
-}
+});
 
-function scripts() {
+gulp.task("html", function () {
+  return gulp.src("app/*.html")
+    .pipe(browserSync.stream());
+});
+
+gulp.task('scripts', function () {
   return gulp
-    .src("./src/js/main.js")
+    .src("app/build/main.js")
     .pipe(uglify())
-    .pipe(gulp.dest("./build/js"))
+    .pipe(rename({
+      suffix: '.min'
+    }))
+    .pipe(gulp.dest("app/js/"))
     .pipe(browserSync.stream());
-}
+})
 
-function clean() {
-  return del(["build/*"]);
-}
-
-function watch() {
+gulp.task("browser-sync", function () {
   browserSync.init({
     server: {
-      baseDir: "./"
+      baseDir: "app/"
     }
   });
-  gulp.watch("./src/css/**/*.css", styles);
-  gulp.watch("./src/js/**/*.js", scripts);
-  gulp.watch("./*.html").on("change", browserSync.reload);
-}
+});
 
-gulp.task("styles", styles);
-gulp.task("scripts", scripts);
-gulp.task("del", clean);
-gulp.task("watch", watch);
-gulp.task("build", gulp.series(clean, gulp.parallel(styles, scripts)));
-/* gulp.task("dev", gulp.series(build, watch)); */
+gulp.task("watch", function () {
+  gulp.watch("app/scss/**/*.scss", gulp.parallel("scss"));
+  gulp.watch("app/*.html", gulp.parallel("html"));
+  gulp.watch("app/build/*.js", gulp.parallel("scripts"));
+});
+
+gulp.task("default", gulp.parallel("browser-sync", "watch"));
