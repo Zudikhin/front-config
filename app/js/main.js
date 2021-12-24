@@ -1,1 +1,4 @@
-function sum(o,l){return o+l}console.log("loh"),console.log(sum(2,4));
+$(document).ready(function () {
+    "use strict";
+    
+});
